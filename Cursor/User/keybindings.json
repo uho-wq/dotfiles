@@ -1,0 +1,233 @@
+// Place your key bindings in this file to override the defaults
+[
+  // Cursor LLM setting
+  {
+    "key": "cmd+m",
+    "command": "cursor.generateGitCommitMessage"
+  },
+  {
+      "key": "cmd+i",
+      "command": "composerMode.agent"
+  },
+  {
+    "key": "cmd+l",
+    "command": "composerMode.agent"
+  },
+  // Window
+  {
+    "key": "ctrl+l",
+    "command": "cursorRight",
+    "when": "neovim.mode == insert && editorTextFocus"
+  },
+  {
+    "key": "ctrl+h",
+    "command": "cursorLeft",
+    "when": "neovim.mode == insert && editorTextFocus"
+  },
+  {
+    "key": "ctrl+j",
+    "command": "cursorDown",
+    "when": "neovim.mode == insert && editorTextFocus"
+  },
+  {
+    "key": "ctrl+k",
+    "command": "cursorUp",
+    "when": "neovim.mode == insert && editorTextFocus"
+  },
+  // Window pane
+  {
+    "key": "ctrl+w -",
+    "command": "workbench.action.splitEditorDown",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  {
+    "key": "ctrl+w \\",
+    "command": "workbench.action.splitEditorRight",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  {
+    "key": "ctrl+w c",
+    "command": "workbench.action.closeEditorsInGroup",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  // Move window
+  {
+    "key": "ctrl+w j",
+    "command": "workbench.action.focusBelowGroup",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  {
+    "key": "ctrl+w k",
+    "command": "workbench.action.focusAboveGroup",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  {
+    "key": "ctrl+w h",
+    "command": "workbench.action.focusLeftGroup",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  {
+    "key": "ctrl+w l",
+    "command": "workbench.action.focusRightGroup",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  // エクスプローラ(左欄のファイル見れるやつ)から編集中ファイルにフォーカスを合わせる
+  {
+    "key": "ctrl+w l",
+    "command": "workbench.action.focusFirstEditorGroup",
+    "when": "listFocus && !inputFocus"
+  },
+  // エクスプローラでファイル名変更
+  {
+    "key": "m r",
+    "command": "renameFile",
+    "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  // エクスプローラでファイルコピー
+  {
+    "key": "m c",
+    "command": "filesExplorer.copy",
+    "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  // エクスプローラでファイルペースト
+  {
+    "key": "m p",
+    "command": "filesExplorer.paste",
+    "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  // エクスプローラでファイル新規作成
+  {
+    "key": "m a",
+    "command": "explorer.newFile",
+    "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  // エクスプローラでファイル削除
+  {
+    "key": "m d",
+    "command": "deleteFile",
+    "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  // エクスプローラでフォルダ新規作成
+  {
+    "key": "m f",
+    "command": "explorer.newFolder",
+    "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+  },
+  // File Explorer の操作
+  {
+      "key": "Enter",
+      "command": "list.toggleExpand",
+      "when": "explorerViewletFocus && explorerViewletVisible && explorerResourceIsFolder && !inputFocus"
+  },
+  // Vim mapping
+  {
+    "key": "shift+h",
+    "command": "cursorHome",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  {
+    "key": "shift+l",
+    "command": "cursorEnd",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  // lsp関連
+  {
+      "key": "g d",
+      "command": "editor.action.revealDefinition",
+      "when": "neovim.mode == normal && editorHasDefinitionProvider && editorTextFocus"
+  },
+  {
+    "key": "g f",
+    "command": "editor.action.goToLocations",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  {
+    "key": "g r",
+    "command": "editor.action.goToReferences",
+    "when": "neovim.mode == normal && editorHasReferenceProvider && editorTextFocus"
+  },
+  {
+    "key": "g i",
+    "command": "editor.action.goToImplementation",
+    "when": "neovim.mode == normal && editorHasTypeDefinitionProvider && editorTextFocus"
+  },
+  {
+      "key": "ctrl+k",
+      "command": "editor.action.showHover",
+      "when": "neovim.mode == normal && editorTextFocus",
+  },
+  // ターミナル操作 (Ctrl+f を prefix のように)
+  {
+      "key": "shift+j",
+      "command": "cursorMove",
+      "args": {
+          "to": "down",
+          "by": "line",
+          "value": 6
+      },
+      "when": "editorTextFocus && (neovim.mode == normal || neovim.mode == visual)"
+  },
+  {
+      "key": "shift+k",
+      "command": "cursorMove",
+      "args": {
+          "to": "up",
+          "by": "line",
+          "value": 6
+      },
+      "when": "editorTextFocus && neovim.mode != insert"
+  },
+
+  // カーソル操作系 (VSCodeコマンドに紐づけ)
+  {
+      "key": "g g",
+      "command": "cursorTop",
+      "when": "editorTextFocus && neovim.mode != 'insert'"
+  },
+  {
+      "key": "g k",
+      "command": "cursorUp",
+      "when": "editorTextFocus && neovim.mode != insert"
+  },
+  {
+      "key": "g j",
+      "command": "cursorDown",
+      "when": "editorTextFocus && neovim.mode != insert"
+  },
+  {
+      "key": "g 0",
+      "command": "cursorHome",
+      "when": "editorTextFocus && neovim.mode != insert"
+  },
+  // suggest補完を Ctrl+n に割り当て
+  {
+      "key": "ctrl+n",
+      "command": "editor.action.triggerSuggest",
+      "when": "editorHasCompletionItemProvider && textInputFocus && !editorReadonly && !suggestWidgetVisible"
+  },
+  // toggle terminal
+  {
+      "key": "cmd+j",
+      "command": "workbench.action.terminal.toggleTerminal",
+      "when": "terminal.active"
+  },
+  {
+    "key": "ctrl+j",
+    "command": "editor.action.joinLines",
+    "when": "editorTextFocus && neovim.mode == normal"
+  },
+  {
+    "key": "space e",
+    "command": "find-it-faster.findFiles",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  {
+    "key": "space p",
+    "command": "find-it-faster.findWithinFiles",
+    "when": "neovim.mode == normal && editorTextFocus"
+  },
+  {
+    "key": "cmd+e",
+    "command": "composerMode.background"
+  },
+]

@@ -1,0 +1,113 @@
+{
+    // "window.commandCenter": 1,
+    "extensions.experimental.affinity": {
+        "asvetliakov.vscode-neovim": 1
+    },
+    "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+    "workbench.editor.showTabs": "single",
+    "workbench.editor.editorActionsLocation": "titleBar",
+    "accessibility.signals.terminalBell": {
+        "announcement": "off",
+        "sound": "off"
+    },
+    "files.autoSave": "afterDelay",
+    "workbench.iconTheme": "ayu-mirage-zed",
+    "makefile.configureOnOpen": false,
+    "editor.accessibilitySupport": "on",
+    "workbench.colorTheme": "Iceberg",
+    "git.autofetch": true,
+    "workbench.panel.defaultLocation": "bottom",
+    "editor.fontSize": 11,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "workbench.editor.enablePreview": false,
+    // "vscode-neovim.neovimClean": true,
+    "vscode-neovim.logPath": "/Users/kazuki.iwasaki/logs/nvim.log",
+    "vscode-neovim.neovimExecutablePaths.darwin": "/opt/homebrew/bin/nvim",
+    "vscode-neovim.neovimInitVimPaths.darwin": "/Users/kazuki.iwasaki/.config/nvim/init.lua",
+    "apc.imports": [],
+    "apc.electron": {
+    "titleBarStyle": "hiddenInset",
+    "trafficLightPosition": {
+      "x": 7,
+      "y": 5
+    }
+  },
+  "editor.fontFamily": "'Zed Mono', 'Courier New', monospace",
+  "apc.font.family": "Zed Sans",
+  "apc.stylesheet": {
+    ".quick-input-widget": {
+      "position": "absolute !important",
+      "top": "200px !important",
+      "left": "50%",
+      "border-radius": "10px",
+      "border": "1px solid var(--vscode-textSeparator-foreground) !important",
+      "box-shadow": "0 0 60px 0 rgba(0,0,0,0.2) !important"
+    },
+    // left title bar (controls)
+    ".titlebar-left": {
+      "max-width": "70px !important"
+    },
+    // center title bar
+    ".titlebar-center": {
+      "margin": "0 !important"
+    },
+    // arrow buttons
+    ".action-item.menu-entry": {
+      "display": "none !important"
+    },
+    // whole title bar command center container
+    ".action-item.command-center-center": {
+      "background-color": "transparent !important",
+      "border": "none !important",
+      "width": "fit-content !important",
+      "display": "flex !important",
+      "align-items": "center !important",
+      "justify-content": "center !important"
+    },
+    // field
+    ".quick-input-header": {
+      "padding": "0 !important"
+    },
+    // input element container
+    ".quick-input-header > .quick-input-and-message .monaco-inputbox": {
+      "border-radius": "10px 10px 0 0 !important"
+    },
+    // actual input element
+    ".quick-input-header > .quick-input-and-message > .quick-input-filter > .quick-input-box input": {
+      "padding": "8px 10px !important"
+    },
+    // list of results
+    ".quick-input-list > .monaco-list > .monaco-scrollable-element": {
+      "padding": "2px !important"
+    },
+    // status bar set height
+    "div:has(> .statusbar)": {
+      "height": "25px !important",
+      "top": "auto !important",
+      "bottom": "0 !important"
+    },
+    ".statusbar": {
+      "height": "25px !important"
+    },
+    // hides search icon
+    ".codicon.codicon-search.search-icon": {
+      "display": "none !important"
+    },
+    // empty editor background
+    ".editor-group-container.empty.active": {
+      "background-color": "var(--vscode-statusBar-background)"
+    },
+    "div:has(> .tabs-and-actions-container.tabs-border-bottom.empty)": {
+      "background-color": "var(--vscode-statusBar-background) !important"
+    }
+  },
+  "animations.Enabled": true,
+  "vscode_custom_css.imports": [
+    "file:///Users/kazuki.iwasaki/.cursor/extensions/brandonkirbyson.vscode-animations-2.0.7/dist/updateHandler.js"
+  ],
+  "editor.cursorBlinking": "smooth",
+  "terminal.integrated.cursorBlinking": true,
+  "extensions.ignoreRecommendations": true,
+  "githubPullRequests.pullBranch": "never",
+  "workbench.activityBar.orientation": "vertical",
+}

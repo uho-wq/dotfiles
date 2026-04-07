@@ -1,0 +1,97 @@
+{
+  "workbench.editorAssociations": {
+    "*.ipynb": "jupyter.notebook.ipynb",
+    "*.sqlite3": "default"
+  },
+  "tabnine.experimentalAutoImports": true,
+  "python.pythonPath": "/usr/bin/python3",
+  "kite.showWelcomeNotificationOnStartup": false,
+  "editor.suggestSelection": "first",
+  "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+  "python.defaultInterpreterPath": "/usr/local/bin/python3",
+
+  "todo-tree.general.tags": [
+    "BUG",
+    "HACK",
+    "FIXME",
+    "TODO",
+    "XXX",
+    "[ ]",
+    "[x]"
+  ],
+  "todo-tree.regex.regex": "(//|#|<!--|;|/\\*|^|^\\s*(-|\\d+.))\\s*($TAGS)",
+
+  "explorer.confirmDragAndDrop": false,
+  "editor.inlineSuggest.enabled": true,
+  "bracket-pair-colorizer-2.de// preciation-notice": false,
+
+  "editor.accessibilitySupport": "off",
+
+  "vscode-neovim.neovimExecutablePaths.darwin": "/usr/local/bin/nvim",
+  "vscode-neovim.neovimInitVimPaths.darwin": "~/.config/nvim/init_vscode.vim",
+  "cSpell.userWords": [
+    "kazu",
+  ],
+
+  "editor.formatOnSave": false,
+  "[sql]": {
+    "editor.defaultFormatter": "adpyke.vscode-sql-formatter"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+  },
+  "bracket-pair-colorizer-2.depreciation-notice": false,
+  "terminal.integrated.env.osx": {
+    "FIG_NEW_SESSION": "1"
+  },
+  "git.autofetch": true,
+  "python.experiments.optInto": [
+  
+  ],
+  "files.autoSave": "afterDelay",
+  "editor.fontSize": 14,
+  "jupyter.interactiveWindowMode": "perFile",
+  "vscodeGoogleTranslate.preferredLanguage": "Japanese",
+  "jupyter.askForKernelRestart": false,
+  "workbench.colorTheme": "Night Owl",
+  "notebook.output.textLineLimit": 1000,
+
+  "workbench.colorCustomizations": {
+    "[Night Owl]": {
+      "editor.background": "#000000",
+      "editor.lineHighlightBackground": "#ffffff2e",
+      "activityBar.background": "#000C1D",
+      "activityBar.border": "#102a44",
+      "editorGroup.border": "#442910",
+      "sideBar.border": "#102a44",
+      "sideBar.background": "#000000",
+      "sideBar.foreground": "#ffffff",
+      "list.focusBackground": "#084f2e"
+    },
+    "[Night Owl (No Italics)]": {
+      "activityBar.background": "#000C1D",
+      "activityBar.border": "#102a44",
+      "editorGroup.border": "#102a44",
+      "sideBar.background": "#001122",
+      "sideBar.border": "#102a44",
+      "sideBar.foreground": "#8BADC1"
+    }
+  },
+  "[python]": {
+    "diffEditor.codeLens": false
+  },
+  "indentRainbow.indicatorStyle": "light",
+  "indentRainbow.colorOnWhiteSpaceOnly": true,
+  "indentRainbow.lightIndicatorStyleLineWidth": 1,
+  "indentRainbow.colors": [
+    "rgba(255,255,64,0.3)",
+    "rgba(127,255,127,0.3)",
+    "rgba(255,127,255,0.3)",
+    "rgba(79,236,236,0.3)"
+  ],
+  "workbench.startupEditor": "none",
+}
