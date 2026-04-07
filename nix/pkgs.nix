@@ -25,11 +25,6 @@ let
         }
       )
     ];
-    config.allowUnfreePredicate =
-      pkg:
-      builtins.elem (nixpkgs.lib.getName pkg) [
-        "zsh-abbr"
-      ];
   };
 in
 {

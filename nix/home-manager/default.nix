@@ -1,7 +1,10 @@
 { config, pkgs, lib, username, homeDirectory, ... }:
 {
   imports = [
-    ./programs.nix
+    ./git.nix
+    ./zsh.nix
+    ./tmux.nix
+    ./tools.nix
     ./files.nix
   ];
 
