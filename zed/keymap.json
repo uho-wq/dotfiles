@@ -1,0 +1,97 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  {
+    "bindings": {
+      "cmd-m": ["agent::NewExternalAgentThread", { "agent": "claude_code" }],
+      "cmd-l": "agent::ToggleFocus"
+    }
+  },
+  // Insert mode cursor movement (vim style hjkl)
+  {
+    "context": "Editor && vim_mode == insert",
+    "bindings": {
+      "ctrl-h": "vim::Left",
+      "ctrl-j": "vim::Down",
+      "ctrl-k": "vim::Up",
+      "ctrl-l": "vim::Right"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "shift-h": "vim::StartOfLine",
+      "shift-l": "vim::EndOfLine",
+      "ctrl-j": "editor::JoinLines",
+      "shift-j": [ "editor::MoveDownByLines", { "lines": 6 } ],
+      "shift-k": [ "editor::MoveUpByLines", { "lines": 6 } ]
+    }
+  },
+  {
+    "context": "Editor && vim_mode == visual",
+    "bindings": {
+      "shift-h": "vim::StartOfLine",
+      "shift-l": "vim::EndOfLine",
+      "ctrl-j": "editor::JoinLines",
+      "shift-j": [ "editor::MoveDownByLines", { "lines": 6 } ],
+      "shift-k": [ "editor::MoveUpByLines", { "lines": 6 } ]
+    }
+  },
+  // Window pane management
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "ctrl-w -": "pane::SplitDown",
+      "ctrl-w \\": "pane::SplitRight",
+      "ctrl-w c": "pane::CloseAllItems",
+      "ctrl-w j": "workspace::ActivatePaneDown",
+      "ctrl-w k": "workspace::ActivatePaneUp",
+      "ctrl-w h": "workspace::ActivatePaneLeft",
+      "ctrl-w l": "workspace::ActivatePaneRight"
+    }
+  },
+  // Project panel navigation
+  {
+    "context": "ProjectPanel",
+    "bindings": {
+      "m r": "project_panel::Rename",
+      "m c": "project_panel::Copy",
+      "m p": "project_panel::Paste",
+      "m a": "project_panel::NewFile",
+      "m d": "project_panel::Delete",
+      "m f": "project_panel::NewDirectory",
+      "enter": "project_panel::Open"
+    }
+  },
+  // Vim-style line navigation and LSP
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "g d": "editor::GoToDefinition",
+      "g f": "editor::GoToDeclaration",
+      "g r": "editor::FindAllReferences",
+      "g i": "editor::GoToImplementation",
+      "g a": "editor::ToggleCodeActions",
+      "ctrl-k": "editor::Hover"
+    }
+  },
+  // Terminal toggle
+  {
+    "bindings": {
+      "cmd-j": "workspace::ToggleBottomDock"
+    }
+  },
+  // File navigation
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "space e": "file_finder::Toggle",
+      "space p": "pane::DeploySearch"
+    }
+  }
+]
