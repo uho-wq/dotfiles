@@ -1,0 +1,19 @@
+.DS_Store
+.zsh_history
+.swp
+.envrc
+.env
+
+# home-manager managed files
+git/ignore
+git/config
+
+claudecode/*
+!claudecode/commands
+!claudecode/agents
+!claudecode/skills
+!claudecode/hooks
+!claudecode/keybindings.json
+
+zed/prompts/*
+.direnv
