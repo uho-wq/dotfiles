@@ -1,34 +1,17 @@
 ## dotfiles
 
-```
-go install github.com/rhysd/dotfiles@latest
-```
-
-### clone 
-```
-dotfiles clone kazu-gor
-```
-
-### link
-```
-dotfiles link .
-```
-
-### clean
-```
-dotfiles clean .
-```
-
-## nix
-
-初期
+### セットアップ
 
 ```sh
+# パッケージのインストール
 nix profile add '.#uho'
+
+# nix-darwin + home-manager の適用
+darwin-rebuild switch --flake '.#work'
 ```
 
-アップデート
+### アップデート
 
 ```sh
-nix run profile '.#update'
+nix run '.#update'
 ```
