@@ -15,6 +15,7 @@ claudecode/*
 !claudecode/hooks
 !claudecode/keybindings.json
 !claudecode/settings.json
+!claudecode/CLAUDE.md
 
 zed/prompts/*
 .direnv
