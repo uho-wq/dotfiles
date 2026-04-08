@@ -1,0 +1,106 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:code.claude.com)",
+      "Bash(tmux show-options:*)",
+      "Bash(bash:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:zenn.dev)",
+      "WebFetch(domain:dev.classmethod.jp)",
+      "WebFetch(domain:www.atlassian.com)",
+      "Bash(go test:*)",
+      "Bash(go tool cover:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(go build:*)",
+      "Bash(gh issue view:*)",
+      "Bash(make test:*)",
+      "Bash(gofmt:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(go vet:*)",
+      "Bash(gh api:*)",
+      "Bash(gh search:*)"
+    ],
+    "deny": [
+      "Bash(rm:*)",
+      "Bash(git push:*)",
+      "mcp__claude_ai_Asana__create_project_confirm",
+      "mcp__claude_ai_Asana__create_project_confirm_populate",
+      "mcp__claude_ai_Asana__create_project_preview",
+      "mcp__claude_ai_Asana__create_task_confirm",
+      "mcp__claude_ai_Asana__create_task_preview",
+      "mcp__claude_ai_Asana__update_task",
+      "mcp__claude_ai_Asana__get_items_for_portfolio",
+      "mcp__claude_ai_Asana__get_portfolio",
+      "mcp__claude_ai_Asana__get_portfolios",
+      "mcp__claude_ai_Asana__get_project",
+      "mcp__claude_ai_Asana__get_projects",
+      "mcp__claude_ai_Asana__get_status_overview",
+      "mcp__claude_ai_Asana__get_user",
+      "mcp__claude_ai_Asana__get_workspace_users",
+      "mcp__claude_ai_Asana__log_widget_event",
+      "mcp__claude_ai_Atlassian__addCommentToJiraIssue",
+      "mcp__claude_ai_Atlassian__addWorklogToJiraIssue",
+      "mcp__claude_ai_Atlassian__createIssueLink",
+      "mcp__claude_ai_Atlassian__createJiraIssue",
+      "mcp__claude_ai_Atlassian__editJiraIssue",
+      "mcp__claude_ai_Atlassian__getIssueLinkTypes",
+      "mcp__claude_ai_Atlassian__getJiraIssue",
+      "mcp__claude_ai_Atlassian__getJiraIssueRemoteIssueLinks",
+      "mcp__claude_ai_Atlassian__getJiraIssueTypeMetaWithFields",
+      "mcp__claude_ai_Atlassian__getJiraProjectIssueTypesMetadata",
+      "mcp__claude_ai_Atlassian__getTransitionsForJiraIssue",
+      "mcp__claude_ai_Atlassian__getVisibleJiraProjects",
+      "mcp__claude_ai_Atlassian__lookupJiraAccountId",
+      "mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql",
+      "mcp__claude_ai_Atlassian__transitionJiraIssue",
+      "mcp__claude_ai_Slack__slack_send_message",
+      "mcp__claude_ai_Slack__slack_send_message_draft",
+      "mcp__claude_ai_Slack__slack_schedule_message",
+      "mcp__claude_ai_Slack__slack_create_canvas",
+      "mcp__claude_ai_Slack__slack_update_canvas"
+    ],
+    "ask": [],
+    "defaultMode": "auto"
+  },
+  "hooks": {
+    "SessionStart": [],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/git/dotfiles/claudecode/hooks/save-memory.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": []
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "npx ccusage@latest statusline"
+  },
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true,
+    "dig@kuu-marketplace": true,
+    "code-review@claude-plugins-official": true,
+    "slack@claude-plugins-official": true,
+    "team-review@local": true
+  },
+  "language": "日本語",
+  "effortLevel": "high",
+  "autoUpdatesChannel": "latest",
+  "voiceEnabled": true,
+  "autoMemoryEnabled": true,
+  "autoDreamEnabled": true,
+  "skipAutoPermissionPrompt": true
+}
