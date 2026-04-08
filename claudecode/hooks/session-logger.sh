@@ -157,13 +157,6 @@ EOF
     esac
 done < "$TRANSCRIPT_PATH"
 
-# Optional: Send notification
-if command -v terminal-notifier &> /dev/null; then
-    terminal-notifier \
-        -message "Session logged to ${OUTPUT_FILE##*/}" \
-        -title "Claude Code" \
-        -group "${PROJECT_DIR}:session-log" \
-        > /dev/null 2>&1 || true
-fi
+notify "Session logged: ${SESSION_SLUG}" 2>/dev/null || true
 
 exit 0

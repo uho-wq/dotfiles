@@ -76,9 +76,8 @@ Raw event data saved to: \`debug_${FILE_TIMESTAMP}.json\`
 
 EOF
 
-# Optional: Notify user
-if command -v terminal-notifier &> /dev/null; then
-  terminal-notifier -message "作業内容を ${FILE_TIMESTAMP}.md に記録しました" -title "Claude Code" -group "$(pwd):uho" > /dev/null 2>&1
-fi
+# Truncate summary for notification
+SHORT_SUMMARY=$(echo "$SUMMARY" | head -1 | cut -c1-80)
+notify "Work documented: ${SHORT_SUMMARY}" 2>/dev/null || true
 
 exit 0

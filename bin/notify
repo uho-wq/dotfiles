@@ -1,0 +1,21 @@
+#!/bin/bash
+# Desktop notification via OSC 9 (Wezterm native)
+# Usage: notify "message"
+#
+# Writes directly to the tmux client's TTY so notifications
+# work even when called from hooks (where stdout is captured).
+
+msg="${1:-Completed}"
+
+if [[ -n "$TMUX" ]]; then
+  tty=$(tmux display-message -p '#{client_tty}' 2>/dev/null)
+  if [[ -n "$tty" && -w "$tty" ]]; then
+    # Write directly to Wezterm's TTY, bypassing tmux
+    printf '\e]9;%s\a' "$msg" > "$tty"
+  else
+    # Fallback: passthrough via stdout
+    printf '\ePtmux;\e\e]9;%s\a\e\\' "$msg"
+  fi
+else
+  printf '\e]9;%s\a' "$msg"
+fi

@@ -48,7 +48,6 @@ in
       gh
       gh-dash
       gh-poi
-      terminal-notifier
       fd
       jq
       lazygit
