@@ -81,6 +81,15 @@
             "command": "bash ~/git/dotfiles/claudecode/hooks/save-memory.sh"
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/git/dotfiles/claudecode/hooks/notify-stop.sh"
+          }
+        ]
       }
     ],
     "Notification": []
