@@ -1,67 +1,28 @@
 return {
   "nvim-treesitter/nvim-treesitter",
+  branch = "main",
   build = ":TSUpdate",
   event = { "BufReadPost", "BufNewFile" },
   config = function()
-    require('nvim-treesitter.configs').setup {
-      -- 必要な言語パーサーをインストール
-      ensure_installed = {
-        "lua", "vim", "vimdoc", "javascript", "typescript", "python", "c", "cpp",
-        "bash", "markdown", "markdown_inline", "json", "yaml", "html", "css", "go", "gomod", "gosum", "templ"
-      },
-      
-      -- 構文ハイライトを有効化
-      highlight = {
-        enable = true,
-        additional_vim_regex_highlighting = false,
-      },
-      
-      -- インデント機能を有効化
-      indent = {
-        enable = true,
-      },
-      
-      -- 括弧のペアリングを強化
-      matchup = {
-        enable = true,
-      },
-      
-      
-      -- テキストオブジェクトの選択
-      textobjects = {
-        select = {
-          enable = true,
-          lookahead = true,
-          keymaps = {
-            ["af"] = "@function.outer",
-            ["if"] = "@function.inner",
-            ["ac"] = "@class.outer",
-            ["ic"] = "@class.inner",
-            ["aa"] = "@parameter.outer",
-            ["ia"] = "@parameter.inner",
-          },
-        },
-        move = {
-          enable = true,
-          set_jumps = true,
-          goto_next_start = {
-            ["]f"] = "@function.outer",
-            ["]c"] = "@class.outer",
-          },
-          goto_next_end = {
-            ["]F"] = "@function.outer",
-            ["]C"] = "@class.outer",
-          },
-          goto_previous_start = {
-            ["[f"] = "@function.outer",
-            ["[c"] = "@class.outer",
-          },
-          goto_previous_end = {
-            ["[F"] = "@function.outer",
-            ["[C"] = "@class.outer",
-          },
-        },
-      },
-    }
+    -- パーサーのインストール（旧 ensure_installed の代替）
+    require('nvim-treesitter').install({
+      "lua", "vim", "vimdoc", "javascript", "typescript", "python", "c", "cpp",
+      "bash", "markdown", "markdown_inline", "json", "yaml", "html", "css",
+      "go", "gomod", "gosum", "templ",
+    })
+
+    -- ハイライト有効化（Neovim ビルトイン API）
+    vim.api.nvim_create_autocmd("FileType", {
+      callback = function(args)
+        pcall(vim.treesitter.start, args.buf)
+      end,
+    })
+
+    -- プラグイン読み込み時点で既に開いているバッファにも適用
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype ~= "" then
+        pcall(vim.treesitter.start, buf)
+      end
+    end
   end,
 }

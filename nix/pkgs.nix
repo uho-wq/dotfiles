@@ -72,6 +72,7 @@ in
       pnpm
       pyenv
       rbenv
+      tree-sitter
       universal-ctags
       pure-prompt
       zsh-autosuggestions
