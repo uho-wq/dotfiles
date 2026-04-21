@@ -400,7 +400,7 @@
     options = {
       # Navigation & Layout
       navigate = true;
-      side-by-side = true;
+      side-by-side = false;
       line-numbers = true;
       hyperlinks = true;
 
