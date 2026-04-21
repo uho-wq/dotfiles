@@ -412,10 +412,10 @@
       # Cyan: #7dcfff, Magenta: #bb9af7, Comment: #565f89
 
       # Diff styles
-      minus-style = "syntax \"#37222c\"";
-      minus-emph-style = "syntax \"#713137\"";
-      plus-style = "syntax \"#20303b\"";
-      plus-emph-style = "syntax \"#2b5a47\"";
+      minus-style = "syntax \"#4a1e2a\"";
+      minus-emph-style = "bold syntax \"#8b2d3f\"";
+      plus-style = "syntax \"#1e3a2a\"";
+      plus-emph-style = "bold syntax \"#2d6b3d\"";
 
       # Line numbers
       line-numbers-minus-style = "#f7768e";
