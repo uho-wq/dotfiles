@@ -15,3 +15,9 @@ darwin-rebuild switch --flake '.#work'
 ```sh
 nix run '.#update'
 ```
+
+### pre-commit hook (lefthook + gitleaks)
+
+```sh
+lefthook install
+```
