@@ -57,6 +57,8 @@ in
       yazi
       zoxide
       ghq
+      gitleaks
+      lefthook
       watch
       awscli2
       colordiff
