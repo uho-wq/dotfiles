@@ -251,7 +251,7 @@
         gcn = "git commit -nm";
         gp = "git pull";
         gsw = "git switch";
-        c = "CLAUDE_CODE_NO_FLICKER=1 claude --enable-auto-mode";
+        c = "claude --enable-auto-mode";
 				y = "yazi";
         lg = "lazygit";
         mk = "mkdir -p";
