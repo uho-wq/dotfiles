@@ -187,7 +187,7 @@
   "language": "日本語",
   "effortLevel": "high",
   "autoUpdatesChannel": "latest",
-  "tui": "default",
+  "tui": "fullscreen",
   "autoMemoryEnabled": true,
   "autoDreamEnabled": true,
   "skipAutoPermissionPrompt": true,
