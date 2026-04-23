@@ -7,7 +7,6 @@
     ignores = [
       ".DS_Store"
       ".envrc"
-      "CLAUDE.md"
       "AGENTS.md"
       "init/"
       ".serena/"
