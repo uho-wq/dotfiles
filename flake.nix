@@ -13,6 +13,7 @@
     };
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     flake-utils.url = "github:numtide/flake-utils";
+    arto.url = "github:arto-app/Arto";
   };
 
   outputs =
@@ -22,6 +23,7 @@
     , home-manager
     , neovim-nightly-overlay
     , flake-utils
+    , arto
     }:
     let
       # 端末ごとの Darwin 設定を生成するヘルパー関数
@@ -45,7 +47,10 @@
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
               home-manager.backupFileExtension = "backup";
-              home-manager.extraSpecialArgs = { inherit username homeDirectory; };
+              home-manager.extraSpecialArgs = {
+                inherit username homeDirectory;
+                arto-pkg = arto.packages.${system}.default;
+              };
               home-manager.users.${username} = import ./nix/home-manager/default.nix;
             }
           ];
