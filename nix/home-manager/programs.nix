@@ -438,6 +438,9 @@
   programs.lazygit = {
     enable = true;
     settings = {
+      os = {
+        editPreset = "nvim-remote";
+      };
       customCommands = [
         {
           key = "o";

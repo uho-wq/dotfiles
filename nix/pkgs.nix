@@ -76,6 +76,7 @@ in
       rbenv
       tree-sitter
       universal-ctags
+      neovim-remote
       pure-prompt
       zsh-autosuggestions
       zsh-completions
