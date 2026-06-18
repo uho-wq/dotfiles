@@ -196,6 +196,7 @@
     "team-review@local": true
   },
   "language": "日本語",
+  "outputStyle": "Structured",
   "effortLevel": "xhigh",
   "autoUpdatesChannel": "latest",
   "tui": "fullscreen",
