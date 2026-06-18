@@ -1,59 +1,92 @@
 #!/bin/bash
-# Claude Code Stop hook: セッション終了前にauto-memoryへ知見を保存させる
+# Claude Code Stop hook: バックグラウンドで auto-memory を更新する
 #
-# Stop hookはClaudeが応答を終えるたびに発火する。
-# このスクリプトは以下の条件を満たす場合のみClaudeの停止をブロックし、
-# 知見の保存を指示する:
-#   1. stop_hook_active が false (hookによる継続中でない)
-#   2. このセッションでまだ保存していない (フラグファイルで管理)
-#   3. セッションが十分な長さ (transcript行数で判定)
+# 旧版は {"decision":"block"} を返してメインセッションの Claude に保存させていたが、
+# それだと (1) セッション終了が一手間遅延する、(2) メイン会話のトークンを消費する、
+# という問題があった。現版は Stop を block せず即 exit 0 し、別プロセスの headless
+# `claude -p` を nohup でバックグラウンド起動して、そちらに save-memory skill を
+# 実行させる。本セッションは即座に終了でき、保存は裏で進む。
+#
+# 仕組み:
+#   - hook 入力の transcript_path / cwd / session_id を使ってバックグラウンド起動
+#   - 環境変数 CLAUDE_SKIP_SAVE_MEMORY=1 を子プロセスに渡し、子プロセス側の Stop
+#     hook が再帰的に save-memory を起動しないようにする (無限増殖防止)
+#   - ログとフラグは /tmp/claude-save-memory/ に集約
 
 set -euo pipefail
 
+# 子プロセス (background claude) からの再帰呼び出しを即時カット
+if [ "${CLAUDE_SKIP_SAVE_MEMORY:-0}" = "1" ]; then
+  exit 0
+fi
+
 INPUT=$(cat)
 
-# stop_hook_activeがtrueなら、既にhookによる継続中 → 許可
+# stop_hook_active が true なら hook 由来の継続中なので何もしない
 STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
 if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
   exit 0
 fi
 
-# セッションIDを取得
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""')
 if [ -z "$SESSION_ID" ]; then
   exit 0
 fi
 
-# フラグファイルで1セッション1回のみ実行を保証
+# 1 セッション 1 回のみバックグラウンドジョブを起動
 FLAG_DIR="/tmp/claude-save-memory"
 mkdir -p "$FLAG_DIR"
 FLAG_FILE="${FLAG_DIR}/${SESSION_ID}"
-
 if [ -f "$FLAG_FILE" ]; then
   exit 0
 fi
 
-# transcriptの行数でセッションの長さを判定
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // ""')
 if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
   exit 0
 fi
 
-LINE_COUNT=$(wc -l < "$TRANSCRIPT_PATH" | tr -d ' ')
+CWD=$(echo "$INPUT" | jq -r '.cwd // ""')
+if [ -z "$CWD" ] || [ ! -d "$CWD" ]; then
+  CWD=$(pwd)
+fi
 
-# 20行未満の短いセッションではスキップ (閾値は調整可能)
+# 短すぎるセッションはスキップ (transcript 行数で判定)
+LINE_COUNT=$(wc -l < "$TRANSCRIPT_PATH" | tr -d ' ')
 THRESHOLD=${CLAUDE_SAVE_MEMORY_THRESHOLD:-20}
 if [ "$LINE_COUNT" -lt "$THRESHOLD" ]; then
   exit 0
 fi
 
-# フラグを立てる (次回のStopではブロックしない)
+# フラグを立てる (次回 Stop では skip)
 touch "$FLAG_FILE"
 
-# Claudeの停止をブロックし、知見の保存を指示
-cat << 'EOF'
-{
-  "decision": "block",
-  "reason": "セッション終了前にauto-memoryを更新してください。save-memory skillの手順に従い:\n1. このセッションの会話を振り返り、新しい知見・パターン・決定事項を特定\n2. MEMORY.mdのトピック一覧を読み、該当トピックファイルも確認して重複を避ける\n3. 新しい知見があればトピックの切り方を検討し、トピックファイルに保存してMEMORY.mdのインデックスを同期（なければ書かずに終了）\n4. 保存した内容を簡潔に報告"
-}
+LOG_FILE="${FLAG_DIR}/${SESSION_ID}.log"
+PROMPT_FILE="${FLAG_DIR}/${SESSION_ID}.prompt"
+
+# プロンプトは quote escape 事故を避けるためファイル経由で受け渡す
+cat > "$PROMPT_FILE" <<EOF
+あなたは別プロセスのバックグラウンド agent です。直前のメインセッションの transcript
+を解析し、save-memory skill の手順に従って auto-memory を更新してください。
+
+- 対象 transcript: ${TRANSCRIPT_PATH}
+- プロジェクト cwd: ${CWD}
+- skill 定義: ~/.claude/skills/save-memory/SKILL.md (まず読み込むこと)
+
+要件:
+1. SKILL.md の Step 1-5 に従う
+2. 既存の MEMORY.md と該当トピックファイルを必ず確認し、重複を避ける
+3. 新しい知見がなければ何も書かずに「新しい知見はありませんでした」とだけ報告
+4. 出力は簡潔な完了報告のみ
 EOF
+
+# nohup + disown でバックグラウンド起動。stdin は /dev/null、stdout/stderr はログへ。
+# CLAUDE_SKIP_SAVE_MEMORY=1 で子プロセスの Stop hook 再発火を防ぐ。
+nohup env CLAUDE_SKIP_SAVE_MEMORY=1 bash -c "
+  cd '$CWD'
+  PROMPT=\$(cat '$PROMPT_FILE')
+  exec claude -p --permission-mode acceptEdits \"\$PROMPT\"
+" > "$LOG_FILE" 2>&1 < /dev/null &
+disown
+
+exit 0
