@@ -162,7 +162,6 @@
     "defaultMode": "auto"
   },
   "hooks": {
-    "SessionStart": [],
     "Stop": [
       {
         "matcher": "",
@@ -197,11 +196,13 @@
     "team-review@local": true
   },
   "language": "日本語",
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "autoUpdatesChannel": "latest",
   "tui": "fullscreen",
   "autoMemoryEnabled": true,
   "autoDreamEnabled": true,
+  "skipWorkflowUsageWarning": true,
+  "verbose": true,
   "skipAutoPermissionPrompt": true,
   "voiceEnabled": true
 }
