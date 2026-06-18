@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>調査レポート — 構造化出力テンプレート</title>
+<style>
+  :root {
+    --paper:   #F7F8FA;
+    --surface: #FFFFFF;
+    --ink:     #1A1C22;
+    --muted:   #565B66;
+    --faint:   #8A8F99;
+    --line:    #E5E7EC;
+    --accent:  #4338CA;
+    --accent-tint: rgba(67, 56, 202, 0.06);
+    --indent: 1.5rem;          /* ツリー1階層あたりの字下げ＝コネクタ幅 */
+    --sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+            "Noto Sans JP", -apple-system, "Segoe UI", Meiryo, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.7;
+    font-size: 16.5px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .doc {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: clamp(2.5rem, 6vw, 5rem) clamp(1.25rem, 5vw, 2.5rem) 6rem;
+  }
+
+  /* masthead --------------------------------------------------------- */
+  .masthead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1.5rem;
+    margin-bottom: 2.25rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .doctype {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+  }
+  .meta {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--faint);
+    font-family: var(--mono);
+  }
+
+  /* tree: ピラミッドを入れ子ツリーとして描く ------------------------- */
+  /*
+    DOM構造 = 論理構造。
+      .node--root      結論（頂点。子をぶら下げる根）
+        .node__children
+          .node--group   根拠（MECE な根拠をまとめる中間ノード）
+            .node__children
+              .node--leaf   個々の根拠（並列）
+          .node--action  対策（結論とは役割が違う別の枝）
+    コネクタ（├ └ │）は CSS の ::before / ::after で描画する。
+  */
+  .tree { position: relative; }
+
+  /* 各ノードの基準。--mt = マーカーを先頭行に合わせる上マージン */
+  .node { position: relative; --mt: 0.45rem; }
+  .node--root,
+  .node--group,
+  .node--action { --mt: 0.2rem; }   /* 先頭が小さい役割ラベルの行 */
+
+  .node__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+  .node__marker {
+    flex: 0 0 auto;
+    width: 10px;
+    height: 10px;
+    margin-top: var(--mt);
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1.5px solid var(--faint);
+  }
+  .node__content { flex: 1 1 auto; min-width: 0; }
+
+  /* マーカーの形＝ノードの役割を encode する（装飾ではない）。
+     径は全ノード 10px に統一 → コネクタの X 座標計算が一定になる */
+  .node--root  > .node__row > .node__marker {            /* 頂点: 塗りつぶし */
+    background: var(--accent); border-color: var(--accent);
+  }
+  .node--group > .node__row > .node__marker {            /* 枝の分岐点 */
+    background: var(--accent-tint); border-color: var(--accent);
+  }
+  .node--action > .node__row > .node__marker {           /* 対策: 角 */
+    border-radius: 2px; border-color: var(--accent);
+  }
+
+  /* 子コンテナ：1階層ぶん字下げし、左にコネクタ用の余白を確保 */
+  .node__children { position: relative; margin-left: var(--indent); }
+
+  /* 縦のレール │（各子が自分の高さぶん描画 → 兄弟どうしで1本に連続） */
+  .node__children > .node {
+    position: relative;
+    padding-top: 1.1rem;                 /* 兄弟間のすき間。レールが覆う */
+  }
+  .node__children > .node::before {
+    content: "";
+    position: absolute;
+    left: calc(-1 * var(--indent) + 4.25px);   /* マーカー中心(5px)に合わせる */
+    top: 0;
+    height: 100%;
+    border-left: 1.5px solid var(--line);
+  }
+  /* 末尾の子はティックで止める → └ になる */
+  .node__children > .node:last-child::before {
+    height: calc(1.1rem + var(--mt) + 5px);
+  }
+  /* 横のティック ── （レールから子マーカーへ） */
+  .node__children > .node::after {
+    content: "";
+    position: absolute;
+    left: calc(-1 * var(--indent) + 4.25px);
+    top: calc(1.1rem + var(--mt) + 5px);
+    width: calc(var(--indent) - 4.25px);
+    border-top: 1.5px solid var(--line);
+  }
+
+  /* 幹 stub：子を持つノードのマーカーから子コンテナ先頭までを繋ぐ。
+     親ラベルが何行でも（結論カードのように背が高くても）追従する */
+  .node--branch > .node__row { position: relative; }
+  .node--branch > .node__row::before {
+    content: "";
+    position: absolute;
+    left: 4.25px;                        /* 子レールと同じ X */
+    top: calc(var(--mt) + 5px);          /* 自ノードのマーカー中心から */
+    bottom: 0;                           /* 行の下端＝子コンテナ先頭まで */
+    border-left: 1.5px solid var(--line);
+  }
+
+  /* role label（結論／根拠／対策）：論理的役割の eyebrow */
+  .role {
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--accent);
+  }
+  .node--leaf .role,
+  .node--action .role { margin-bottom: 0.3rem; }
+
+  /* thesis（頂点）：これだけ読めば要旨が分かる強調ブロック */
+  .node--root > .node__row > .node__content {
+    background: var(--accent-tint);
+    border-radius: 10px;
+    padding: 0.85rem 1.1rem 1rem;
+  }
+  .thesis {
+    margin: 0.3rem 0 0;
+    font-size: clamp(1.5rem, 4.5vw, 1.95rem);
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  .amp {
+    margin: 0.6rem 0 0;
+    color: var(--muted);
+    font-size: 0.97rem;
+  }
+
+  /* グループの見出し（並列な根拠を束ねるラベル） */
+  .node--group > .node__row > .node__content > .role { margin-bottom: 0; }
+
+  /* メッセージ見出し＋本文 */
+  .msg {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 650;
+    line-height: 1.45;
+  }
+  .body { margin: 0.4rem 0 0; color: var(--muted); }
+
+  /* detail layer: 段階的開示 ---------------------------------------- */
+  details {
+    margin-top: 0.7rem;
+    border-top: 1px solid var(--line);
+  }
+  summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 0.5rem 0 0.1rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--faint);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: "+";
+    font-family: var(--mono);
+    color: var(--accent);
+    transition: transform 0.15s ease;
+  }
+  details[open] summary::before { content: "–"; }
+  .detail-body { padding: 0.35rem 0 0.4rem; color: var(--muted); font-size: 0.94rem; }
+
+  code, .path {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: #EEF0F4;
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+  pre {
+    background: #15171D;
+    color: #E6E8EE;
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin: 0.6rem 0 0;
+  }
+
+  a { color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+  @media (max-width: 480px) {
+    :root { --indent: 1.1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <main class="doc">
+    <header class="masthead">
+      <p class="doctype">調査レポート</p>
+      <p class="meta">api-service / 2026-06-18</p>
+    </header>
+
+    <div class="tree">
+
+      <!-- ROOT: 結論を1つ。これだけ読めば要旨が伝わる頂点（子を持つ枝） -->
+      <div class="node node--root node--branch">
+        <div class="node__row">
+          <span class="node__marker" aria-hidden="true"></span>
+          <div class="node__content">
+            <p class="role">結論</p>
+            <h1 class="thesis">原因は接続プールの枯渇です</h1>
+            <p class="amp">同時接続が上限の 10 を超えると待機が発生し、タイムアウトしていました。</p>
+          </div>
+        </div>
+
+        <!-- 結論からぶら下がる枝（根拠グループと対策） -->
+        <div class="node__children">
+
+          <!-- GROUP: MECE な根拠を束ねる中間ノード（子を持つ枝） -->
+          <div class="node node--group node--branch">
+            <div class="node__row">
+              <span class="node__marker" aria-hidden="true"></span>
+              <div class="node__content">
+                <p class="role">根拠</p>
+              </div>
+            </div>
+
+            <!-- 並列に並ぶ個々の根拠 -->
+            <div class="node__children">
+
+              <div class="node node--leaf">
+                <div class="node__row">
+                  <span class="node__marker" aria-hidden="true"></span>
+                  <div class="node__content">
+                    <h2 class="msg">深夜のアクセス集中時に同時接続が上限を超えている</h2>
+                    <p class="body">ピーク時間帯にプール待機が連続し、その直後にタイムアウトが記録されている。</p>
+                    <details>
+                      <summary>ログ抜粋</summary>
+                      <div class="detail-body">
+                        <pre>02:14:07  pool: waiting (active=10/10)
+02:14:12  ETIMEDOUT after 5000ms
+02:14:12  ETIMEDOUT after 5000ms</pre>
+                      </div>
+                    </details>
+                  </div>
+                </div>
+              </div>
+
+              <div class="node node--leaf">
+                <div class="node__row">
+                  <span class="node__marker" aria-hidden="true"></span>
+                  <div class="node__content">
+                    <h2 class="msg">リクエストは正常に到達しており、アプリ層の問題ではない</h2>
+                    <p class="body">アクセスログ上はリクエストが受理されており、処理に入る前の接続取得段階で詰まっている。</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ACTION: 結論とは役割が違うので、根拠グループと並ぶ別の枝 -->
+          <div class="node node--leaf node--action">
+            <div class="node__row">
+              <span class="node__marker" aria-hidden="true"></span>
+              <div class="node__content">
+                <p class="role">対策</p>
+                <h2 class="msg">まずプールサイズを引き上げ、並行してリークを確認する</h2>
+                <p class="body">プール拡大は即効だが、接続リークが真因なら拡大しても再発するため、両輪で進める。</p>
+                <details>
+                  <summary>変更箇所</summary>
+                  <div class="detail-body">
+                    設定は <span class="path">config/db.ts</span> の <code>maxConnections</code>。
+                    あわせて未解放接続の有無を接続トレースで確認する。
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</body>
+</html>
