@@ -12,6 +12,9 @@ in
     # Claude config
     ".claude".source = symlink "${dotfilesPath}/claudecode";
 
+    # AeroSpace config
+    ".config/aerospace".source = symlink "${dotfilesPath}/aerospace";
+
     # WezTerm config
     ".config/wezterm".source = symlink "${dotfilesPath}/wezterm";
 
