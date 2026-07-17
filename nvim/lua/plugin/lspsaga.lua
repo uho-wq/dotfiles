@@ -6,6 +6,19 @@ return {
     'nvim-tree/nvim-web-devicons',
   },
   config = function()
+    -- nvim 0.13で削除された私的APIをlspsagaがまだ呼ぶため復元する
+    -- (definition/finder/callhierarchy/typehierarchy の計12箇所で使用)
+    if vim.lsp.util._get_line_byte_from_position == nil then
+      vim.lsp.util._get_line_byte_from_position = function(bufnr, position, offset_encoding)
+        local col = position.character
+        if col <= 0 then
+          return 0
+        end
+        local line = vim.api.nvim_buf_get_lines(bufnr, position.line, position.line + 1, false)[1] or ''
+        return vim.str_byteindex(line, offset_encoding or 'utf-16', col, false)
+      end
+    end
+
     require('lspsaga').setup({
       ui = {
         winbar_prefix = '',
