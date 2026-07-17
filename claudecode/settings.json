@@ -171,6 +171,7 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "claude-fable-5[1m]",
   "hooks": {
     "Stop": [
       {
@@ -205,15 +206,17 @@
     "slack@claude-plugins-official": true,
     "team-review@local": true
   },
-  "language": "日本語",
   "outputStyle": "Structured",
-  "effortLevel": "xhigh",
+  "language": "日本語",
+  "effortLevel": "high",
   "autoUpdatesChannel": "latest",
-  "tui": "fullscreen",
+  "tui": "default",
   "autoMemoryEnabled": true,
   "autoDreamEnabled": true,
   "skipWorkflowUsageWarning": true,
+  "theme": "dark",
   "verbose": true,
+  "teammateMode": "in-process",
   "skipAutoPermissionPrompt": true,
   "voiceEnabled": true
 }
