@@ -15,7 +15,7 @@ after-login-command = []
 after-startup-command = []
 
 # Start AeroSpace at login
-start-at-login = false
+start-at-login = true
 
 # Normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
 enable-normalization-flatten-containers = true
@@ -102,6 +102,14 @@ alt-shift-l = 'move right'
 # See: https://nikitabobko.github.io/AeroSpace/commands#resize
 alt-shift-minus = 'resize smart -50'
 alt-shift-equal = 'resize smart +50'
+ctrl-shift-h = 'resize width -50'
+ctrl-shift-l = 'resize width +50'
+ctrl-shift-j = 'resize height +50'
+ctrl-shift-k = 'resize height -50'
+
+# See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-monitor
+alt-cmd-h = 'move-node-to-monitor --wrap-around left'
+alt-cmd-l = 'move-node-to-monitor --wrap-around right'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#workspace
 alt-1 = 'workspace 1'
@@ -118,7 +126,8 @@ alt-b = 'workspace B'
 alt-c = 'workspace C'
 alt-d = 'workspace D'
 alt-e = 'workspace E'
-alt-f = 'workspace F'
+# See: https://nikitabobko.github.io/AeroSpace/commands#layout
+alt-f = 'layout floating tiling' # float⇔tileトグル
 alt-g = 'workspace G'
 alt-i = 'workspace I'
 alt-m = 'workspace M'
