@@ -17,6 +17,7 @@ claudecode/*
 !claudecode/settings.json
 !claudecode/CLAUDE.md
 !claudecode/output-styles
+!claudecode/*.sh
 
 zed/prompts/*
 .direnv

@@ -197,7 +197,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "npx ccusage@latest statusline"
+    "command": "bash ~/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
     "gopls-lsp@claude-plugins-official": true,
