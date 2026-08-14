@@ -4,9 +4,9 @@ local config = wezterm.config_builder()
 config.font_size = 12.0
 config.automatically_reload_config = true
 config.use_ime = true
-config.window_background_opacity = 0.80
-config.macos_window_background_blur = 6
-config.text_background_opacity = 0.5
+config.window_background_opacity = 0.75
+config.macos_window_background_blur = 0
+config.text_background_opacity = 0.3
 config.color_scheme = 'Tokyo Night'
 
 config.font = wezterm.font_with_fallback({
