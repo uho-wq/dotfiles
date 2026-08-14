@@ -97,8 +97,6 @@
       "Read(//**/.netrc)",
       "Edit(//**/.env)",
       "Edit(//**/.env.*)",
-      "Write(//**/.env)",
-      "Write(//**/.env.*)",
       "mcp__claude_ai_Asana__create_project_confirm",
       "mcp__claude_ai_Asana__create_project_confirm_populate",
       "mcp__claude_ai_Asana__create_project_preview",
@@ -171,7 +169,6 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5[1m]",
   "hooks": {
     "Stop": [
       {
