@@ -14,6 +14,7 @@ INPUT=$(cat)
 
 STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
 TITLE_FILE="/tmp/claude-session-title"
+LABEL_FILE="/tmp/claude-session-label"
 TRANSCRIPT_PATH=$(echo "$INPUT" | jq -r '.transcript_path // ""')
 
 # transcriptから最後のアシスタントテキストメッセージを抽出し、要約として使う
@@ -44,6 +45,14 @@ read_session_title() {
   fi
 }
 
+# セッションラベル (外部プッシュ用の作業種別) を読む
+# 許可値の検証は ~/bin/notify 側で行われ、不正値なら外部送信されない
+read_session_label() {
+  if [ -f "$LABEL_FILE" ]; then
+    head -1 "$LABEL_FILE" | tr -cd 'a-z'
+  fi
+}
+
 # 通知を送る
 send_notify() {
   local title=""
@@ -65,7 +74,10 @@ send_notify() {
     message="${message:0:37}..."
   fi
 
-  ~/bin/notify "$message"
+  # 外部プッシュ(ntfy)には自由文を送らず、ラベル由来の定型文のみ送る
+  local label=""
+  label=$(read_session_label) || true
+  ~/bin/notify "$message" "${label:-done}"
 }
 
 # hookによる継続中 (save-memory完了後) → 最終Stopなので通知

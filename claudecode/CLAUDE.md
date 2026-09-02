@@ -10,6 +10,16 @@ echo "nvim telescope設定" > /tmp/claude-session-title
 - 内容を端的に表す日本語タイトル（例: "CI修正", "zsh高速化", "PR review #42"）
 - 会話中にタイトルを更新する必要はない
 
+### セッションラベル（外部プッシュ通知用）
+
+タイトルと同時に、作業種別ラベルも書いてください:
+```
+echo "impl" > /tmp/claude-session-label
+```
+- 許可値: `impl`(実装) / `research`(調査) / `review`(レビュー) / `ci`(CI) / `config`(設定変更) / `docs`(ドキュメント)
+- iPhone/Apple Watch へのプッシュ通知（ntfy.sh）にはこのラベル由来の定型文だけが送られる。タイトルや transcript の自由文は外部に出ない
+- 不正値・未設定は「Claude Code 完了」にフォールバックするので、迷ったら書かなくてよい
+
 ### Stop通知
 
 Stop hookがデスクトップ通知を自動送信します。通知内容の優先順:

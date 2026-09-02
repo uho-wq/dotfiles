@@ -1,11 +1,47 @@
 #!/bin/bash
 # Desktop notification via OSC 9 (Wezterm native)
-# Usage: notify "message"
+# Usage: notify "message" [label]
 #
 # Writes directly to the tmux client's TTY so notifications
 # work even when called from hooks (where stdout is captured).
 
 msg="${1:-Completed}"
+label="${2:-}"
+
+# Forward to ntfy.sh (iPhone / Apple Watch) if a topic is configured.
+# Topic name acts as the auth secret: keep ~/.config/ntfy-topic out of git (chmod 600).
+#
+# Allowlist-only: the public server never receives free-form text ($msg stays
+# local). Only the fixed message mapped from a known label is sent; an unknown
+# or missing label sends nothing.
+ntfy_msg=""
+ntfy_tags="white_check_mark"
+ntfy_prio="default"
+case "$label" in
+  done)     ntfy_msg="Claude Code 完了" ;;
+  impl)     ntfy_msg="実装タスク 完了" ;;
+  research) ntfy_msg="調査タスク 完了" ;;
+  review)   ntfy_msg="レビュー 完了" ;;
+  ci)       ntfy_msg="CIタスク 完了" ;;
+  config)   ntfy_msg="設定変更 完了" ;;
+  docs)     ntfy_msg="ドキュメント作業 完了" ;;
+  error)    ntfy_msg="エラーで停止" ntfy_tags="x" ntfy_prio="high" ;;
+  input)    ntfy_msg="入力待ち" ntfy_tags="bell" ntfy_prio="high" ;;
+esac
+
+ntfy_topic_file="$HOME/.config/ntfy-topic"
+if [[ -n "$ntfy_msg" && -r "$ntfy_topic_file" ]]; then
+  ntfy_topic=$(head -1 "$ntfy_topic_file")
+  if [[ -n "$ntfy_topic" ]]; then
+    # Fire-and-forget so hook execution never blocks on network
+    curl -fsS --max-time 5 \
+      -H "Title: Claude Code" \
+      -H "Tags: $ntfy_tags" \
+      -H "Priority: $ntfy_prio" \
+      -d "$ntfy_msg" \
+      "https://ntfy.sh/$ntfy_topic" >/dev/null 2>&1 &
+  fi
+fi
 
 if [[ -n "$TMUX" ]]; then
   tty=$(tmux display-message -p '#{client_tty}' 2>/dev/null)
