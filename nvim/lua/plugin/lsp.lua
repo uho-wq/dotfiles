@@ -91,6 +91,9 @@ return {
           }
       })
 
+      -- kotlin-lsp: Mason が置く実行ファイル名は intellij-server（lspconfig 既定の kotlin-lsp とは不一致）
+      vim.lsp.config('kotlin_lsp', { cmd = { 'intellij-server', '--stdio' } })
+
       -- Diagnostics configuration
       vim.diagnostic.config({
         update_in_insert = false,
