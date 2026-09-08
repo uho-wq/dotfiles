@@ -170,7 +170,27 @@
     "defaultMode": "auto"
   },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/git/dotfiles/claudecode/hooks/readable-prose-remind.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/git/dotfiles/claudecode/hooks/readable-prose-lint.sh"
+          }
+        ]
+      },
       {
         "matcher": "",
         "hooks": [
@@ -212,8 +232,16 @@
   "autoDreamEnabled": true,
   "skipWorkflowUsageWarning": true,
   "theme": "dark",
-  "verbose": true,
+  "verbose": false,
   "teammateMode": "in-process",
   "skipAutoPermissionPrompt": true,
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "extraKnownMarketplaces": {
+    "android-harness": {
+      "source": {
+        "source": "github",
+        "repo": "everytv/claude-code-plugin-for-android"
+      }
+    }
+  }
 }

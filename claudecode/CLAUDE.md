@@ -36,3 +36,5 @@ Think in English, interact with the user in Japanese.
 下記の作文指針はこの CLAUDE.md 経由で常に読み込まれている。まとまった文章（報告・分析・変更説明・PR説明・Slack文面・コミットメッセージ）を書く前に `readable-prose` skill を Skill ツールで別途呼ぶ必要はない。呼んでも同じ内容が二重に載るだけ。
 
 @~/.claude/skills/readable-prose/SKILL.md
+
+hook でも2層で強制している。`UserPromptSubmit` (`hooks/readable-prose-remind.sh`) が毎ターン要点を再注入し、`Stop` (`hooks/readable-prose-lint.sh`) が最終応答を §4 の語で機械検査して、120字以上の本文に残っていれば1回だけ差し戻す。差し戻し理由に語が列挙されるので、その箇所を直して同じ内容を再送する。
