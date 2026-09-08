@@ -30,3 +30,9 @@ Stop hookがデスクトップ通知を自動送信します。通知内容の�
 セッションタイトルを設定していれば、通知は自動で適切になります。`/tmp/claude-notify-summary` への要約書き込みは不要です。
 
 Think in English, interact with the user in Japanese.
+
+## 文章の書き方（readable-prose を常時適用）
+
+下記の作文指針はこの CLAUDE.md 経由で常に読み込まれている。まとまった文章（報告・分析・変更説明・PR説明・Slack文面・コミットメッセージ）を書く前に `readable-prose` skill を Skill ツールで別途呼ぶ必要はない。呼んでも同じ内容が二重に載るだけ。
+
+@~/.claude/skills/readable-prose/SKILL.md
