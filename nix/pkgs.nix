@@ -83,6 +83,7 @@ in
       zsh-syntax-highlighting
       jnv
       uv
+      tinygo
     ];
   };
 }

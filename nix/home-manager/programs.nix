@@ -208,9 +208,8 @@
       export PATH="/opt/homebrew/opt/mysql-client@8.0/bin:$PATH"
 
       # Go
-      export GOROOT="$HOME/sdk/go1.26.0"
       export GOPATH="$HOME/go"
-      export PATH="$GOROOT/bin:$GOPATH/bin:$PATH"
+      export PATH="/usr/local/go/bin:$GOPATH/bin:$PATH"
 
       # Python (lazy load)
       export PYENV_ROOT="$HOME/.pyenv"
