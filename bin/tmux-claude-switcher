@@ -1,0 +1,349 @@
+#!/usr/bin/env bash
+# tmux-claude-switcher: tmux 上の Claude Code を「次に手を付ける順」に並べ、選んだ pane へ移動する
+#
+# 状態の取得元
+#   Claude Code は ~/.claude/sessions/<pid>.json に status (idle/busy/waiting/shell)、
+#   waitingFor ("permission prompt" など)、statusUpdatedAt を書き出す。これを pane と結合する。
+#   公開仕様ではない内部ファイルなので、読めないセッションは「不明」として一覧に残す。
+#
+# 既読の扱い
+#   この switcher で移動した pane と、switcher を開いたときに見ていた pane を既読にする
+#   (pane option @claude_seen_at)。既読にした後で完了したセッションだけを「完了」として上位に出す。
+#
+# 使い方
+#   tmux-claude-switcher                  一覧を開く (tmux: prefix + a)
+#   tmux-claude-switcher --list           fzf に渡す一覧を出力する (内部用)
+#   tmux-claude-switcher --preview PANE   プレビューを出力する (内部用)
+set -uo pipefail
+
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)/$(basename "${BASH_SOURCE[0]}")"
+SESSIONS_DIR="$HOME/.claude/sessions"
+PROJECTS_DIR="$HOME/.claude/projects"
+CACHE_DIR="${TMPDIR:-/tmp}/tmux-claude-switcher-$(id -u)"
+REFRESH_SEC="${TMUX_CLAUDE_SWITCHER_REFRESH:-2}"
+# bash の read はタブの連続を1つに潰すため、空欄を含むレコードは US (0x1f) で区切る
+US=$'\037'
+
+rgb() { printf '\033[38;2;%sm' "$1"; }
+RED=$(rgb '247;118;142')
+GREEN=$(rgb '158;206;106')
+YELLOW=$(rgb '224;175;104')
+BLUE=$(rgb '122;162;247')
+GRAY=$(rgb '86;95;137')
+FG=$(rgb '192;202;245')
+BOLD=$'\033[1m'
+RESET=$'\033[0m'
+
+now_ms() { echo $(( $(date +%s) * 1000 )); }
+
+# ファイルを末尾から読む。GNU tac が無ければ BSD の tail -r を使う
+rev_cat() {
+  if command -v tac >/dev/null 2>&1; then tac "$1"; else tail -r "$1"; fi
+}
+
+# transcript から指定 type の最新エントリを探し、jq 式で値を取り出す
+latest_entry() { # $1=transcript $2=type $3=jq式
+  rev_cat "$1" 2>/dev/null | grep -m1 -F "\"type\":\"$2\"" | jq -r "($3) // empty" 2>/dev/null
+}
+
+# 最後のユーザー入力より後に Claude が書いた text ブロックのうち、いちばん長いもの (回答本体) から後ろを出す。
+# 1ターンの途中でツールを挟むと text が複数に分かれ、最後の1つは「メモに追記しました」のような一言になりやすい。
+# 書き込み途中の行があっても止まらないよう、1行ずつ fromjson? で読む
+last_reply() { # $1=transcript
+  rev_cat "$1" 2>/dev/null | grep -F -e '"type":"user"' -e '"type":"text"' | jq -Rrn '
+    def prompt: .type == "user" and .isMeta != true
+      and ([.message.content | if type == "array" then .[] else {type: "text"} end | select(.type == "tool_result")] | length == 0);
+    [ label $done
+      | inputs | fromjson? | select(.isSidechain != true)
+      | if prompt then break $done else . end
+      | select(.type == "assistant")
+      | [.message.content[]? | select(.type == "text") | .text] | join("\n\n")
+      | select(length > 0) ]
+    | reverse
+    | if length == 0 then empty
+      else (to_entries | max_by(.value | length) | .key) as $i | .[$i:] | join("\n\n") end' 2>/dev/null
+}
+
+fmt_elapsed() { # $1=経過ミリ秒
+  local s=$(( $1 / 1000 ))
+  if   [ "$s" -lt 60 ];    then printf '%ds' "$s"
+  elif [ "$s" -lt 3600 ];  then printf '%dm' $(( s / 60 ))
+  elif [ "$s" -lt 86400 ]; then printf '%dh' $(( s / 3600 ))
+  else                          printf '%dd' $(( s / 86400 ))
+  fi
+}
+
+# 状態ごとの並び順・色・記号・ラベルを決める。ラベルは表示幅8桁にそろえる
+state_meta() { # $1=state $2=waitingFor
+  case "$1" in
+    waiting)
+      RANK=0; COLOR=$RED; ICON='●'
+      case "$2" in
+        'permission prompt') LABEL='許可待ち' ;;
+        'input needed')      LABEL='入力待ち' ;;
+        *)                   LABEL='応答待ち' ;;
+      esac ;;
+    done)  RANK=1; COLOR=$GREEN;  ICON='●'; LABEL='完了    ' ;;
+    busy)  RANK=2; COLOR=$YELLOW; ICON='◐'; LABEL='実行中  ' ;;
+    shell) RANK=3; COLOR=$YELLOW; ICON='◌'; LABEL='BG実行中' ;;
+    seen)  RANK=4; COLOR=$GRAY;   ICON='○'; LABEL='確認済  ' ;;
+    new)   RANK=5; COLOR=$GRAY;   ICON='○'; LABEL='未着手  ' ;;
+    *)     RANK=6; COLOR=$GRAY;   ICON='?'; LABEL='不明    ' ;;
+  esac
+}
+
+mark_seen() { # $1=pane_id
+  [ -n "${1:-}" ] && tmux set-option -p -t "$1" @claude_seen_at "$(now_ms)" 2>/dev/null
+  return 0
+}
+
+# Claude が動いている pane ごとに、セッションファイルの状態を結合して1行ずつ出す
+# 出力 (US区切り): pane_id status waitingFor statusUpdatedAt seen_at sessionId name nameSource path location
+raw_sessions() {
+  local panes procs
+  panes=$(tmux list-panes -a -F '#{pane_id}	#{pane_tty}	#{pane_current_path}	#{window_name}.#{pane_index}	#{@claude_seen_at}')
+  procs=$(ps -Ao pid=,tty=,comm= | awk '$3 ~ /(^|\/)claude$/ { print $1 "\t/dev/" $2 }')
+
+  # セッションファイルは書き込み途中のことがあるので、壊れた行は捨てる
+  awk 1 "$SESSIONS_DIR"/*.json 2>/dev/null \
+    | jq -cR 'fromjson? // empty' \
+    | jq -rs --arg panes "$panes" --arg procs "$procs" --arg us "$US" '
+        (map({key: (.pid | tostring), value: .}) | from_entries) as $byPid
+        # 1つの tty に claude が複数いるときは、セッションファイルを持つ pid を優先する
+        | ($procs | split("\n") | map(select(length > 0) | split("\t"))
+           | group_by(.[1])
+           | map({key: .[0][1], value: (map(.[0]) | (map(select($byPid[.] != null)) + .)[0])})
+           | from_entries) as $pidByTty
+        | $panes | split("\n")[] | select(length > 0) | split("\t")
+        | . as [$id, $tty, $path, $loc, $seen]
+        | ($pidByTty[$tty] // empty) as $pid
+        | ($byPid[$pid] // {}) as $s
+        | [$id, ($s.status // "unknown"), ($s.waitingFor // ""),
+           (($s.statusUpdatedAt // 0) | tostring), ($seen // ""),
+           ($s.sessionId // ""), ($s.name // ""), ($s.nameSource // ""), $path, $loc]
+        | join($us)'
+}
+
+# fzf 用の一覧を出す。1行目はヘッダ (状態ごとの件数)、2行目以降は「pane_id<TAB>表示文字列」
+# プレビュー用の詳細は $CACHE_DIR/rows に書く
+list() {
+  mkdir -p "$CACHE_DIR"
+  local now sorted cache
+  now=$(now_ms)
+  sorted=$(mktemp "$CACHE_DIR/sorted.XXXXXX")
+  cache=$(mktemp "$CACHE_DIR/rows.XXXXXX")
+  local n_wait=0 n_done=0 n_run=0 n_rest=0
+
+  local id status wait at seen sid name nsrc path loc
+  while IFS="$US" read -r id status wait at seen sid name nsrc path loc; do
+    # pane のパスに改行や US が入ると列がずれて任意の文字列が入りうる。
+    # bash は算術式の中で配列の添字を評価するので、数字以外は 0 にしてから使う
+    case $at in ''|*[!0-9]*) at=0 ;; esac
+    case $seen in ''|*[!0-9]*) seen=0 ;; esac
+    local transcript="" f
+    if [ -n "$sid" ]; then
+      for f in "$PROJECTS_DIR"/*/"$sid".jsonl; do
+        if [ -f "$f" ]; then transcript=$f; break; fi
+      done
+    fi
+
+    # タイトル: ユーザーが付けた名前 > 自動生成タイトル > 最後のプロンプト > 自動の名前
+    local ai_title="" prompt="" title=""
+    if [ -n "$transcript" ]; then
+      ai_title=$(latest_entry "$transcript" ai-title '.aiTitle')
+      [ -z "$ai_title" ] && prompt=$(latest_entry "$transcript" last-prompt '.lastPrompt | split("\n")[0]')
+    fi
+    if [ "$nsrc" = user ] && [ -n "$name" ]; then title=$name
+    elif [ -n "$ai_title" ]; then title=$ai_title
+    elif [ -n "$prompt" ]; then title=$prompt
+    else title=$name
+    fi
+    title=${title//$'\t'/ }
+
+    # idle は「既読より後に終わったか」で完了と確認済を分ける。会話が無ければ未着手
+    local state=$status
+    if [ "$status" = idle ]; then
+      if [ -z "$ai_title" ] && [ -z "$prompt" ]; then state=new
+      elif [ "${at:-0}" -gt "${seen:-0}" ]; then state=done
+      else state=seen
+      fi
+    fi
+
+    local gi repo="" branch="" common
+    gi=$(git -C "$path" rev-parse --path-format=absolute --git-common-dir --abbrev-ref HEAD 2>/dev/null)
+    if [ -n "$gi" ]; then
+      common=${gi%%$'\n'*}
+      branch=${gi##*$'\n'}
+      common=${common%/.git}
+      repo=${common##*/}
+    else
+      repo=${path##*/}
+    fi
+
+    state_meta "$state" "$wait"
+    case "$RANK" in
+      0) n_wait=$(( n_wait + 1 )) ;;
+      1) n_done=$(( n_done + 1 )) ;;
+      2|3) n_run=$(( n_run + 1 )) ;;
+      *) n_rest=$(( n_rest + 1 )) ;;
+    esac
+
+    local elapsed='-' label_style="" title_color=$FG
+    [ "${at:-0}" -gt 0 ] && elapsed=$(fmt_elapsed $(( now - at )))
+    [ "$RANK" -le 1 ] && label_style=$BOLD
+    [ "$RANK" -ge 4 ] && title_color=$GRAY
+
+    local display
+    display=$(printf '%s%s%s %s%s %4s  %s%-16.16s%s %s%s%s' \
+      "$COLOR" "$label_style" "$ICON" "$LABEL" "$RESET" "$elapsed" \
+      "$BLUE" "$repo" "$RESET" "$title_color" "$title" "$RESET")
+    # 並び順: 状態の優先度 → 状態が変わった時刻の新しい順
+    printf '%s\t%013d\t%s\t%s\n' "$RANK" $(( 9999999999999 - ${at:-0} )) "$id" "$display" >> "$sorted"
+    printf '%s\n' "$id$US$state$US$wait$US$at$US$title$US$repo$US$branch$US$path$US$loc$US$transcript" >> "$cache"
+  done < <(raw_sessions)
+
+  mv -f "$cache" "$CACHE_DIR/rows"
+
+  local summary
+  count() { # $1=件数 $2=色 $3=記号つきラベル
+    if [ "$1" -gt 0 ]; then printf '%s%s%s %d%s' "$2" "$BOLD" "$3" "$1" "$RESET"
+    else printf '%s%s %d%s' "$GRAY" "$3" "$1" "$RESET"
+    fi
+  }
+  summary="$(count "$n_wait" "$RED" '● 要対応')   $(count "$n_done" "$GREEN" '● 完了')   $(count "$n_run" "$YELLOW" '◐ 実行中')   $(count "$n_rest" "$GRAY" '○ その他')"
+  printf '\t%s\n' "$summary"
+  sort -t "$(printf '\t')" -k1,1n -k2,2n "$sorted" | cut -f3-
+  rm -f "$sorted"
+}
+
+# 選択中の pane の詳細と、画面の末尾を出す
+preview() { # $1=pane_id
+  local target=${1:-} row
+  row=$(awk -F "$US" -v id="$target" '$1 == id' "$CACHE_DIR/rows" 2>/dev/null | head -1)
+  if [ -z "$row" ]; then
+    echo "この pane の情報がありません"
+    return
+  fi
+  local id state wait at title repo branch path loc transcript
+  IFS="$US" read -r id state wait at title repo branch path loc transcript <<< "$row"
+
+  local cols=${FZF_PREVIEW_COLUMNS:-80} lines=${FZF_PREVIEW_LINES:-40}
+  state_meta "$state" "$wait"
+  local elapsed=""
+  [ "${at:-0}" -gt 0 ] && elapsed="$(fmt_elapsed $(( $(now_ms) - at ))) 経過"
+
+  local prompt=""
+  [ -n "$transcript" ] && prompt=$(latest_entry "$transcript" last-prompt '.lastPrompt | split("\n") | if length > 1 then .[0] + " …" else .[0] end')
+
+  local short_path=${path#"$HOME"}
+  [ "$short_path" != "$path" ] && short_path="~$short_path"
+
+  local header=0
+  printf '%s%s%s %s%s  %s%s%s\n' "$COLOR" "$BOLD" "$ICON" "$LABEL" "$RESET" "$GRAY" "$elapsed" "$RESET"; header=$(( header + 1 ))
+  printf '%s%s%s\n' "$BOLD" "$title" "$RESET"; header=$(( header + 1 ))
+  printf '%s%s%s%s  %s  %s  %s%s\n' "$BLUE" "$repo" "$RESET" "$GRAY" "${branch:+⎇ $branch}" "$loc" "$short_path" "$RESET"; header=$(( header + 1 ))
+  if [ -n "$prompt" ]; then
+    printf '%s❯ %s%s\n' "$GRAY" "$prompt" "$RESET"; header=$(( header + 1 ))
+  fi
+  printf '%s' "$GRAY"; printf '─%.0s' $(seq 1 "$cols"); printf '%s\n' "$RESET"; header=$(( header + 1 ))
+
+  # Claude Code は代替画面に描くので、capture-pane で取れるのは pane の大きさ (例: 80x23) まで。
+  # 手が空いている pane は transcript から最後の応答を取り、プレビューの幅で折り返す (折り返しは fzf の wrap)。
+  # 許可待ちはダイアログを、実行中は進み具合を見たいので画面を出す (実行中のターンの text は transcript にまだ無い)
+  if [ "$state" != waiting ] && [ "$state" != busy ] && [ -n "$transcript" ]; then
+    local reply
+    reply=$(last_reply "$transcript")
+    if [ -n "$reply" ]; then
+      if command -v bat >/dev/null 2>&1; then
+        bat --language=markdown --color=always --style=plain --paging=never --wrap=never <<< "$reply"
+      else
+        printf '%s\n' "$reply"
+      fi
+      return
+    fi
+  fi
+
+  # 許可待ちはダイアログが画面末尾にあるのでそのまま出す。
+  # それ以外 (transcript が読めないとき) は入力欄 (罫線2本に挟まれた部分) とその下のステータスラインを削る
+  local trim=1
+  [ "$state" = waiting ] && trim=0
+  tmux capture-pane -p -e -t "$target" 2>/dev/null | awk -v trim="$trim" -v n=$(( lines - header )) -v esc=$'\033' '
+    function blank(i) { return plain[i] ~ /^[[:space:]]*$/ }
+    {
+      raw[NR] = $0
+      s = $0
+      gsub(esc "\\[[0-9;:?<>=]*[ -/]*[@-~]", "", s)
+      plain[NR] = s
+    }
+    END {
+      last = NR
+      while (last > 0 && blank(last)) last--
+      if (trim) {
+        found = 0
+        for (i = last; i > 0 && i > last - 30; i--) {
+          if (index(plain[i], "─────") == 1 && ++found == 2) { last = i - 1; break }
+        }
+        while (last > 0 && blank(last)) last--
+      }
+      start = last - n + 1
+      if (start < 1) start = 1
+      for (i = start; i <= last; i++) print raw[i] esc "[0m"
+    }'
+}
+
+jump() { # $1=pane_id $2=最大化するなら1
+  tmux switch-client -t "$1" 2>/dev/null
+  tmux select-window -t "$1"
+  tmux select-pane -t "$1"
+  if [ "$2" = 1 ] && [ "$(tmux display -p -t "$1" '#{window_zoomed_flag}')" = 0 ]; then
+    tmux resize-pane -Z -t "$1"
+  fi
+  mark_seen "$1"
+}
+
+main() {
+  if ! command -v fzf >/dev/null 2>&1; then
+    echo "fzf が見つかりません"
+    read -r -n 1 -s
+    exit 1
+  fi
+
+  # switcher を開いた時点で見ていた pane は既読にする
+  mark_seen "$(tmux display -p '#{pane_id}')"
+
+  local initial
+  initial=$(list)
+  if [ "$(printf '%s\n' "$initial" | wc -l)" -le 1 ]; then
+    echo "Claude Code のセッションが見つかりません。"
+    read -r -n 1 -s -p "何かキーを押すと閉じます"
+    exit 0
+  fi
+
+  # every(N) で一覧とプレビューを定期更新する。--track --id-nth=1 で更新後も同じ pane にカーソルを残す
+  local out
+  out=$(printf '%s\n' "$initial" | fzf \
+    --ansi --layout=reverse --no-sort --highlight-line \
+    --header-lines=1 --delimiter='\t' --with-nth=2 --track --id-nth=1 \
+    --prompt='CLAUDE › ' --pointer='▌' --info=inline-right \
+    --header='enter 移動 · ctrl-o 移動して最大化 · ctrl-r 更新 · ctrl-/ プレビュー切替' \
+    --color='fg:#c0caf5,hl:#ff9e64,fg+:#c0caf5,bg+:#283457,hl+:#ff9e64,info:#565f89,prompt:#7dcfff,pointer:#7dcfff,header:#565f89,border:#3b4261,separator:#3b4261,scrollbar:#3b4261' \
+    --preview="'$SELF' --preview {1}" \
+    --preview-window='right,55%,border-left,wrap,<60(down,60%,border-top,wrap)' \
+    --bind="ctrl-r,every($REFRESH_SEC):reload-sync('$SELF' --list)+refresh-preview" \
+    --bind='ctrl-/:toggle-preview' \
+    --expect=ctrl-o) || exit 0
+
+  local key sel id zoom=0
+  key=$(printf '%s\n' "$out" | sed -n 1p)
+  sel=$(printf '%s\n' "$out" | sed -n 2p)
+  id=${sel%%$'\t'*}
+  [ -z "$id" ] && exit 0
+  [ "$key" = ctrl-o ] && zoom=1
+  jump "$id" "$zoom"
+}
+
+case "${1:-}" in
+  --list)    list ;;
+  --preview) preview "${2:-}" ;;
+  *)         main ;;
+esac
