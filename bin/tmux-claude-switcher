@@ -46,6 +46,24 @@ latest_entry() { # $1=transcript $2=type $3=jq式
   rev_cat "$1" 2>/dev/null | grep -m1 -F "\"type\":\"$2\"" | jq -r "($3) // empty" 2>/dev/null
 }
 
+# 最後のユーザー入力より後に Claude が書いた text ブロックのうち、いちばん長いもの (回答本体) から後ろを出す。
+# 1ターンの途中でツールを挟むと text が複数に分かれ、最後の1つは「メモに追記しました」のような一言になりやすい。
+# 書き込み途中の行があっても止まらないよう、1行ずつ fromjson? で読む
+last_reply() { # $1=transcript
+  rev_cat "$1" 2>/dev/null | grep -F -e '"type":"user"' -e '"type":"text"' | jq -Rrn '
+    def prompt: .type == "user" and .isMeta != true
+      and ([.message.content | if type == "array" then .[] else {type: "text"} end | select(.type == "tool_result")] | length == 0);
+    [ label $done
+      | inputs | fromjson? | select(.isSidechain != true)
+      | if prompt then break $done else . end
+      | select(.type == "assistant")
+      | [.message.content[]? | select(.type == "text") | .text] | join("\n\n")
+      | select(length > 0) ]
+    | reverse
+    | if length == 0 then empty
+      else (to_entries | max_by(.value | length) | .key) as $i | .[$i:] | join("\n\n") end' 2>/dev/null
+}
+
 fmt_elapsed() { # $1=経過ミリ秒
   local s=$(( $1 / 1000 ))
   if   [ "$s" -lt 60 ];    then printf '%ds' "$s"
@@ -229,8 +247,24 @@ preview() { # $1=pane_id
   fi
   printf '%s' "$GRAY"; printf '─%.0s' $(seq 1 "$cols"); printf '%s\n' "$RESET"; header=$(( header + 1 ))
 
+  # Claude Code は代替画面に描くので、capture-pane で取れるのは pane の大きさ (例: 80x23) まで。
+  # 手が空いている pane は transcript から最後の応答を取り、プレビューの幅で折り返す (折り返しは fzf の wrap)。
+  # 許可待ちはダイアログを、実行中は進み具合を見たいので画面を出す (実行中のターンの text は transcript にまだ無い)
+  if [ "$state" != waiting ] && [ "$state" != busy ] && [ -n "$transcript" ]; then
+    local reply
+    reply=$(last_reply "$transcript")
+    if [ -n "$reply" ]; then
+      if command -v bat >/dev/null 2>&1; then
+        bat --language=markdown --color=always --style=plain --paging=never --wrap=never <<< "$reply"
+      else
+        printf '%s\n' "$reply"
+      fi
+      return
+    fi
+  fi
+
   # 許可待ちはダイアログが画面末尾にあるのでそのまま出す。
-  # それ以外は入力欄 (罫線2本に挟まれた部分) とその下のステータスラインを削る
+  # それ以外 (transcript が読めないとき) は入力欄 (罫線2本に挟まれた部分) とその下のステータスラインを削る
   local trim=1
   [ "$state" = waiting ] && trim=0
   tmux capture-pane -p -e -t "$target" 2>/dev/null | awk -v trim="$trim" -v n=$(( lines - header )) -v esc=$'\033' '
@@ -294,7 +328,7 @@ main() {
     --header='enter 移動 · ctrl-o 移動して最大化 · ctrl-r 更新 · ctrl-/ プレビュー切替' \
     --color='fg:#c0caf5,hl:#ff9e64,fg+:#c0caf5,bg+:#283457,hl+:#ff9e64,info:#565f89,prompt:#7dcfff,pointer:#7dcfff,header:#565f89,border:#3b4261,separator:#3b4261,scrollbar:#3b4261' \
     --preview="'$SELF' --preview {1}" \
-    --preview-window='right,55%,border-left,<140(down,60%,border-top)' \
+    --preview-window='right,55%,border-left,wrap,<60(down,60%,border-top,wrap)' \
     --bind="ctrl-r,every($REFRESH_SEC):reload-sync('$SELF' --list)+refresh-preview" \
     --bind='ctrl-/:toggle-preview' \
     --expect=ctrl-o) || exit 0
