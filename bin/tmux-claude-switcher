@@ -118,6 +118,10 @@ list() {
 
   local id status wait at seen sid name nsrc path loc
   while IFS="$US" read -r id status wait at seen sid name nsrc path loc; do
+    # pane のパスに改行や US が入ると列がずれて任意の文字列が入りうる。
+    # bash は算術式の中で配列の添字を評価するので、数字以外は 0 にしてから使う
+    case $at in ''|*[!0-9]*) at=0 ;; esac
+    case $seen in ''|*[!0-9]*) seen=0 ;; esac
     local transcript="" f
     if [ -n "$sid" ]; then
       for f in "$PROJECTS_DIR"/*/"$sid".jsonl; do
